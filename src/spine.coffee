@@ -306,8 +306,9 @@ class Model extends Module
     record
 
   updateAttribute: (name, value, options) ->
-    @[name] = value
-    @save(options)
+    attrs = {}
+    attrs[name] = value
+    @updateAttributes(attrs, options)
 
   updateAttributes: (atts, options) ->
     @load(atts)
