@@ -132,6 +132,9 @@ class Model extends Module
 
     @trigger('refresh', @cloneArray(records))
     this
+    result = @cloneArray(records)
+    @trigger('refresh', result)
+    result
 
   @select: (callback) ->
     result = (record for id, record of @records when callback(record))
