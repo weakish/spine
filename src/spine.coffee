@@ -130,8 +130,6 @@ class Model extends Module
       @records[record.id]   = record
       @crecords[record.cid] = record
 
-    @trigger('refresh', @cloneArray(records))
-    this
     result = @cloneArray(records)
     @trigger('refresh', result)
     result
