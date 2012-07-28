@@ -390,28 +390,27 @@ class Controller extends Module
       @[key] = value
 
     @el  = document.createElement(@tag) unless @el
-    @el  = $(@el)
-    @$el = @el
+    @$el = $(@el)
 
-    @el.addClass(@className) if @className
-    @el.attr(@attributes) if @attributes
+    @$el.addClass(@className) if @className
+    @$el.attr(@attributes) if @attributes
 
     @events = @constructor.events unless @events
     @elements = @constructor.elements unless @elements
 
-    @delegateEvents(@events) if @events
+    @delegateEvents() if @events
     @refreshElements() if @elements
 
     super
 
   release: =>
     @trigger 'release'
-    @el.remove()
+    @$el.remove()
     @unbind()
 
-  $: (selector) -> $(selector, @el)
+  $: (selector) -> $(selector, @$el)
 
-  delegateEvents: (events) ->
+  delegateEvents: (events = @events) ->
     for key, method of events
 
       if typeof(method) is 'function'
@@ -432,9 +431,9 @@ class Controller extends Module
       selector   = match[2]
 
       if selector is ''
-        @el.bind(eventName, method)
+        @$el.bind(eventName, method)
       else
-        @el.delegate(selector, eventName, method)
+        @$el.delegate(selector, eventName, method)
 
   refreshElements: ->
     for key, value of @elements
@@ -444,33 +443,37 @@ class Controller extends Module
     setTimeout(@proxy(func), timeout || 0)
 
   html: (element) ->
-    @el.html(element.el or element)
+    @$el.html(element.el or element)
     @refreshElements()
-    @el
+    @$el
 
   append: (elements...) ->
     elements = (e.el or e for e in elements)
-    @el.append(elements...)
+    @$el.append(elements...)
     @refreshElements()
-    @el
+    @$el
 
   appendTo: (element) ->
-    @el.appendTo(element.el or element)
+    @$el.appendTo(element.el or element)
     @refreshElements()
-    @el
+    @$el
 
   prepend: (elements...) ->
     elements = (e.el or e for e in elements)
-    @el.prepend(elements...)
+    @$el.prepend(elements...)
     @refreshElements()
-    @el
+    @$el
 
   replace: (element) ->
-    [previous, @el] = [@el, $(element.el or element)]
-    previous.replaceWith(@el)
-    @delegateEvents(@events)
+    [previous, @$el] = [@$el, element.el or element]
+
+    @$el = $(@$el)
+    @el  = @$el.get(0)
+    @$el.replaceAll(previous)
+
+    @delegateEvents()
     @refreshElements()
-    @el
+    @$el
 
 # Utilities & Shims
 
