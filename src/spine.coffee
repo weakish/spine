@@ -83,21 +83,40 @@ class Module
 class Model extends Module
   @extend Events
 
-  @records: {}
-  @crecords: {}
-  @attributes: []
+  @configure: ->
+    return if @hasOwnProperty('configured')
+    @configured = true
 
-  @configure: (name, attributes...) ->
-    @className  = name
-    @records    = {}
-    @crecords   = {}
-    @attributes = attributes if attributes.length
-    @attributes and= makeArray(@attributes)
-    @attributes or=  []
+    @records     = {}
+    @crecords    = {}
+    @attributes  = {}
     @unbind()
+
     this
 
-  @toString: -> "#{@className}(#{@attributes.join(", ")})"
+  @key: (name, type, options = {}) ->
+    @configure()
+
+    if typeof type is 'object'
+      [options, type] = [type, null]
+
+    serialize =
+      switch type
+        when String, Boolean, null, undefined
+          (val) -> val
+        when Number
+          parseFloat
+        when Date
+          (val) -> new type(val)
+        else
+          type
+
+    @attributes[name] =
+      type:      type
+      serialize: serialize
+      options:   options
+
+  @toString: -> "#{@name}(#{keys @attributes.join(", ")})"
 
   @find: (id) ->
     record = @records[id]
@@ -238,18 +257,31 @@ class Model extends Module
     not @validate()
 
   validate: ->
+    valid  = true
+    result = {}
 
-  load: (atts) ->
-    for key, value of atts
+    for attr, value of @constructor.attributes
+      if value.options.required and !@[attr]
+        valid = false
+        result[attr] =
+          type:    'required'
+          message: "#{attr} required"
+
+    result unless valid
+
+  load: (attrs) ->
+    for key, value of attrs
       if typeof @[key] is 'function'
         @[key](value)
+      else if attr = @constructor.attributes[key]
+        @[key] = attr.serialize(value)
       else
         @[key] = value
     this
 
   attributes: ->
     result = {}
-    for key in @constructor.attributes when key of this
+    for key of @constructor.attributes when key of this
       if typeof @[key] is 'function'
         result[key] = @[key]()
       else
@@ -319,7 +351,7 @@ class Model extends Module
     @attributes()
 
   toString: ->
-    "<#{@constructor.className} (#{JSON.stringify(this)})>"
+    "<#{@constructor.name} (#{JSON.stringify(this)})>"
 
   fromForm: (form) ->
     result = {}
@@ -495,12 +527,15 @@ isBlank = (value) ->
 makeArray = (args) ->
   Array::slice.call(args, 0)
 
+keys = Object.keys or (object) ->
+  (key for key, value of object)
+
 # Globals
 
 Spine = @Spine   = {}
 module?.exports  = Spine
 
-Spine.version    = '1.0.8'
+Spine.version    = '1.0.9'
 Spine.isArray    = isArray
 Spine.isBlank    = isBlank
 Spine.$          = $
@@ -525,7 +560,7 @@ Module.create = Module.sub =
       result.unbind?()
       result
 
-Model.setup = (name, attributes = []) ->
+Model.setup = ->
   class Instance extends this
   Instance.configure(name, attributes...)
   Instance
