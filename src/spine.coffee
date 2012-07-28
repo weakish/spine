@@ -109,7 +109,10 @@ class Model extends Module
         when Date
           (val) -> new type(val)
         else
-          type
+          if typeof type is 'function'
+            type
+          else
+            throw new Error("#{type} not supported")
 
     @attributes[name] =
       type:      type
