@@ -191,12 +191,6 @@ class Model extends Module
     else
       @trigger('change', callbackOrParams)
 
-  @fetch: (callbackOrParams) ->
-    if typeof callbackOrParams is 'function'
-      @bind('fetch', callbackOrParams)
-    else
-      @trigger('fetch', callbackOrParams)
-
   @toJSON: ->
     @recordsValues()
 
