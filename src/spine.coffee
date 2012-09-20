@@ -91,7 +91,6 @@ class Model extends Module
     @crecords    = {}
     @attributes  = {}
     @unbind()
-
     this
 
   @key: (name, type, options = {}) ->
@@ -109,17 +108,14 @@ class Model extends Module
         when Date
           (val) -> new type(val)
         else
-          if typeof type is 'function'
-            type
-          else
-            throw new Error("#{type} not supported")
+          type
 
     @attributes[name] =
       type:      type
       serialize: serialize
       options:   options
 
-  @toString: -> "#{@name}(#{keys @attributes.join(", ")})"
+  @toString: -> "#{@name}(#{keys(@attributes).join(", ")})"
 
   @find: (id) ->
     record = @records[id]
@@ -157,8 +153,7 @@ class Model extends Module
     result
 
   @select: (callback) ->
-    result = (record for id, record of @records when callback(record))
-    @cloneArray(result)
+    (record.clone() for id, record of @records when callback(record))
 
   @findByAttribute: (name, value) ->
     for id, record of @records
@@ -234,10 +229,7 @@ class Model extends Module
   # Private
 
   @recordsValues: ->
-    result = []
-    for key, value of @records
-      result.push(value)
-    result
+    (value for key, value of @records)
 
   @cloneArray: (array) ->
     (value.clone() for value in array)
@@ -316,9 +308,8 @@ class Model extends Module
     record
 
   updateAttribute: (name, value, options) ->
-    attrs = {}
-    attrs[name] = value
-    @updateAttributes(attrs, options)
+    @[name] = value
+    @save(options)
 
   updateAttributes: (atts, options) ->
     @load(atts)
@@ -371,7 +362,7 @@ class Model extends Module
     @load(result)
 
   exists: ->
-    @id && @id of @constructor.records
+    @id and @id of @constructor.records
 
   # Private
 
@@ -399,10 +390,10 @@ class Model extends Module
 
   bind: (events, callback) ->
     @constructor.bind events, binder = (record) =>
-      if record && @eql(record)
+      if record and @eql(record)
         callback.apply(this, arguments)
     @constructor.bind 'unbind', unbinder = (record) =>
-      if record && @eql(record)
+      if record and @eql(record)
         @constructor.unbind(events, binder)
         @constructor.unbind('unbind', unbinder)
     binder
@@ -571,7 +562,7 @@ Module.create = Module.sub =
       result.unbind?()
       result
 
-Model.setup = ->
+Model.setup = (name, attributes = []) ->
   class Instance extends this
   Instance.configure(name, attributes...)
   Instance
