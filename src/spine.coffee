@@ -228,6 +228,9 @@ class Model extends Module
   @fromForm: ->
     (new this).fromForm(arguments...)
 
+  @isInstance: (object) ->
+    typeof object is 'object' and object instanceof this
+
   # Private
 
   @recordsValues: ->
@@ -249,6 +252,10 @@ class Model extends Module
   # Instance
 
   constructor: (atts) ->
+    # Return object if it's already an instance
+    if @constructor.isInstance(atts)
+      return atts
+
     super
     @load atts if atts
     @cid = @constructor.uid('c-')
